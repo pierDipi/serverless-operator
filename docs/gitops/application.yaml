@@ -2,18 +2,18 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: openshift-serverless
+  namespace: openshift-serverless
 spec:
   destination:
-    name: openshift-serverless
-    namespace: argocd
-    server: 'https://kubernetes.default.svc'
+    name: ""
+    namespace: ""
+    server: ""
+  project: openshift-serverless
   source:
     path: docs/gitops/serverless
-    repoURL: 'https://github.com/pierDipi/serverless-operator'
+    repoURL: https://github.com/pierDipi/serverless-operator
     targetRevision: filter-eventing-ns-argocd
-  project: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-
