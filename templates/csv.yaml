@@ -668,6 +668,16 @@ spec:
                 - list
                 - update
                 - watch
+            - apiGroups:
+                - eventing.knative.dev
+                - messaging.knative.dev
+                - flows.knative.dev
+                - sources.knative.dev
+              resources: ["*"]
+              verbs:
+                - get
+                - list
+                - watch
 
             # Leases are needed for leaderelection to work
             - apiGroups:
