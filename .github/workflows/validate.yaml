@@ -52,7 +52,7 @@ jobs:
 
       - name: Set CURRENT_VERSION_IMAGES on push
         working-directory: ./src/github.com/${{ github.repository }}
-        if: github.ref_name != 'main' && !contains(github.ref_name, 'dependabot/')
+        if: github.base_ref != 'main' && !contains(github.ref_name, 'dependabot/')
         run: |
           tag="release-$(yq read ./olm-catalog/serverless-operator/project.yaml 'project.version')"
           echo "CURRENT_VERSION_IMAGES=${tag}" >> $GITHUB_ENV
