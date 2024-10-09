@@ -1,12 +1,33 @@
-ARG OPM_IMAGE=registry.ci.openshift.org/origin/4.17:operator-registry
+FROM registry.ci.openshift.org/origin/4.17:operator-registry AS opm
 
-FROM $OPM_IMAGE
+FROM registry.access.redhat.com/ubi9/ubi-minimal as builder
 
+COPY --from=opm /bin/opm /bin/opm
+
+# Copy declarative config root into image at /configs
+COPY olm-catalog/serverless-operator-index/configs /configs
+
+RUN /bin/opm init serverless-operator --default-channel=stable --output yaml >> /configs/index.yaml
+RUN /bin/opm render --skip-tls-verify -o yaml \
+registry.ci.openshift.org/knative/release-1.33.0:serverless-bundle \
+registry.ci.openshift.org/knative/release-1.34.0:serverless-bundle \
+      registry.ci.openshift.org/knative/release-1.35.0:serverless-bundle >> /configs/index.yaml || \
+    /bin/opm render --skip-tls-verify -o yaml \
+registry.ci.openshift.org/knative/release-1.33.0:serverless-bundle \
+registry.ci.openshift.org/knative/release-1.34.0:serverless-bundle \
+      quay.io/redhat-user-workloads/ocp-serverless-tenant/serverless-operator-135/serverless-bundle@sha256:bdadea4accf8f0438854d916efb4783f9f321a684a5f4816926481161a576b3b >> /configs/index.yaml
+
+# The base image is expected to contain
+# /bin/opm (with a serve subcommand) and /bin/grpc_health_probe
+FROM registry.ci.openshift.org/origin/4.17:operator-registry
+
+# Copy declarative config root into image at /configs
+COPY --from=builder /configs /configs
+
+# Set DC-specific label for the location of the DC root directory
+# in the image
 LABEL operators.operatorframework.io.index.configs.v1=/configs
 
-COPY catalog/ /configs
-
-RUN ["/bin/opm", "serve", "/configs", "--cache-dir=/tmp/cache", "--cache-only"]
-
+# Configure the entrypoint and command
 ENTRYPOINT ["/bin/opm"]
-CMD ["serve", "/configs", "--cache-dir=/tmp/cache"]
+CMD ["serve", "/configs"]
